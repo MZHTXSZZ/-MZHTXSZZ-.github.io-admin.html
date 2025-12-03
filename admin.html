@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主神空间TRPG战役管理系统 - 管理员模式</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #0a0e17;
+            --secondary-color: #1a243f;
+            --accent-color: #00d4ff;
+            --accent-glow: rgba(0, 212, 255, 0.7);
+            --danger-color: #ff375f;
+            --success-color: #00ff88;
+            --warning-color: #ffa500;
+            --text-color: #e0e0ff;
+            --panel-color: rgba(10, 14, 23, 0.85);
+            --border-color: #2a3a5f;
+            --edit-color: #9d4edd;
+        }
+        
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 100, 200, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(120, 0, 200, 0.1) 0%, transparent 20%),
+                linear-gradient(to bottom, transparent 0%, rgba(0, 20, 40, 0.5) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* 管理员控制面板 */
+        .admin-controls {
+            background-color: rgba(20, 10, 40, 0.9);
+            padding: 1rem;
+            border-bottom: 2px solid var(--edit-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .admin-title {
+            color: var(--edit-color);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .admin-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .admin-btn {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .admin-btn:hover {
+            background-color: rgba(0, 100, 200, 0.3);
+            border-color: var(--accent-color);
+        }
+        
+        .admin-btn.edit {
+            background-color: rgba(157, 78, 221, 0.2);
+            border-color: var(--edit-color);
+        }
+        
+        .admin-btn.edit:hover {
+            background-color: rgba(157, 78, 221, 0.4);
+        }
+        
+        .admin-btn.save {
+            background-color: rgba(0, 255, 136, 0.1);
+            border-color: var(--success-color);
+        }
+        
+        .admin-btn.save:hover {
+            background-color: rgba(0, 255, 136, 0.2);
+        }
+        
+        .admin-btn.cancel {
+            background-color: rgba(255, 55, 95, 0.1);
+            border-color: var(--danger-color);
+        }
+        
+        .admin-btn.cancel:hover {
+            background-color: rgba(255, 55, 95, 0.2);
+        }
+        
+        /* 主神空间标题和装饰 */
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+            background-color: rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.2);
+        }
+        
+        .main-title {
+            font-size: 2.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #00d4ff, #0080ff, #a000ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px var(--accent-glow);
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .main-title::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0b0ff;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+        
+        /* 网格布局 */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 2rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 面板通用样式 */
+        .panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        }
+        
+        .panel.editing::before {
+            background: linear-gradient(90deg, transparent, var(--edit-color), transparent);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .panel-title i {
+            font-size: 1.3rem;
+        }
+        
+        .panel.editing .panel-title {
+            color: var(--edit-color);
+        }
+        
+        /* 角色卡区域 */
+        .characters-section {
+            grid-column: 1;
+        }
+        
+        .character-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .character-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-color: rgba(20, 30, 50, 0.7);
+            position: relative;
+        }
+        
+        .character-card:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .character-card.active {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        .character-card.editing {
+            border-color: var(--edit-color);
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+        }
+        
+        .character-header {
+            background-color: rgba(0, 20, 40, 0.8);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .character-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .character-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-alive {
+            background-color: rgba(0, 255, 100, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .status-injured {
+            background-color: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+            border: 1px solid #ffa500;
+        }
+        
+        .status-dead {
+            background-color: rgba(255, 55, 95, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+        
+        .character-info {
+            padding: 1rem;
+        }
+        
+        .character-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed rgba(100, 150, 255, 0.2);
+        }
+        
+        .stat-value {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .character-skills {
+            margin-top: 1rem;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            background-color: rgba(0, 100, 200, 0.2);
+            color: #80c0ff;
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            border: 1px solid rgba(0, 100, 200, 0.4);
+        }
+        
+        /* 编辑模式下的输入控件 */
+        .edit-input, .edit-select, .edit-textarea {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        
+        .edit-input:focus, .edit-select:focus, .edit-textarea:focus {
+            outline: none;
+            border-color: var(--edit-color);
+            box-shadow: 0 0 5px var(--edit-color);
+        }
+        
+        .edit-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .edit-small {
+            width: 80px;
+        }
+        
+        .edit-tag-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .edit-tag-input input {
+            flex-grow: 1;
+        }
+        
+        .edit-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .edit-tag {
+            background-color: rgba(157, 78, 221, 0.2);
+            color: #c9a0ff;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            border: 1px solid rgba(157, 78, 221, 0.4);
+        }
+        
+        .edit-tag-remove {
+            cursor: pointer;
+            color: var(--danger-color);
+        }
+        
+        /* 编辑按钮 */
+        .edit-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: rgba(157, 78, 221, 0.3);
+            color: var(--edit-color);
+            border: 1px solid var(--edit-color);
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: none;
+            z-index: 10;
+        }
+        
+        .character-card:hover .edit-btn,
+        .timeline-item:hover .edit-btn,
+        .resource-item:hover .edit-btn {
+            display: block;
+        }
+        
+        .edit-btn:hover {
+            background-color: rgba(157, 78, 221, 0.5);
+        }
+        
+        /* 战役进度区域 */
+        .campaign-section {
+            grid-column: 2;
+        }
+        
+        @media (max-width: 1024px) {
+            .campaign-section {
+                grid-column: 1;
+            }
+        }
+        
+        /* 任务时间线 */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-color), transparent);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: rgba(20, 30, 50, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .timeline-item.editing {
+            border-left-color: var(--edit-color);
+        }
+        
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -36px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        
+        .timeline-item.editing::before {
+            background-color: var(--edit-color);
+            box-shadow: 0 0 10px rgba(157, 78, 221, 0.7);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mission-name {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+        
+        .timeline-item.editing .mission-name {
+            color: var(--edit-color);
+        }
+        
+        .mission-status {
+            font-size: 0.9rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+        }
+        
+        .status-completed {
+            background-color: rgba(0, 255, 100, 0.2);
+            color: #00ff88;
+        }
+        
+        .status-ongoing {
+            background-color: rgba(0, 212, 255, 0.2);
+            color: var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-upcoming {
+            background-color: rgba(150, 150, 150, 0.2);
+            color: #aaa;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .mission-desc {
+            color: #b0c0ff;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mission-reward {
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+        
+        /* 主神公告 */
+        .announcement {
+            background-color: rgba(255, 55, 95, 0.1);
+            border: 1px solid rgba(255, 55, 95, 0.3);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .announcement.editing {
+            border-color: var(--edit-color);
+        }
+        
+        .announcement-header {
+            color: var(--danger-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        /* 队伍资源 */
+        .resource-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .resource-item {
+            background-color: rgba(30, 40, 70, 0.5);
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .resource-item.editing {
+            border-color: var(--edit-color);
+        }
+        
+        .resource-name {
+            font-size: 0.9rem;
+            color: #a0b0ff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .resource-value {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        /* 编辑面板 */
+        .edit-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .edit-form {
+            background-color: var(--panel-color);
+            border: 2px solid var(--edit-color);
+            border-radius: 8px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(157, 78, 221, 0.5);
+        }
+        
+        .edit-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .edit-form-title {
+            font-size: 1.5rem;
+            color: var(--edit-color);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #c0d0ff;
+        }
+        
+        /* 底部装饰 */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: #8090cc;
+            font-size: 0.9rem;
+        }
+        
+        /* 数据流效果 */
+        .data-stream {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .stream-line {
+            position: absolute;
+            width: 1px;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, var(--accent-color), transparent);
+            animation: streamFall linear infinite;
+        }
+        
+        @keyframes streamFall {
+            0% { transform: translateY(-100px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        
+        /* 主神控制台 */
+        .console {
+            font-family: 'Courier New', monospace;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #00ff00;
+            font-size: 0.9rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .console-line {
+            margin-bottom: 0.3rem;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+                gap: 1rem;
+            }
+            
+            .admin-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .admin-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .main-title {
+                font-size: 2rem;
+            }
+            
+            .panel {
+                padding: 1rem;
+            }
+            
+            .character-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .resource-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .edit-panel {
+                padding: 1rem;
+            }
+            
+            .edit-form {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 数据流背景效果 -->
+    <div class="data-stream" id="dataStream"></div>
+    
+    <!-- 管理员控制面板 -->
+    <div class="admin-controls">
+        <div class="admin-title">
+            <i class="fas fa-user-shield"></i> 管理员控制面板
+        </div>
+        <div class="admin-buttons">
+            <button class="admin-btn edit" id="toggleEditMode">
+                <i class="fas fa-edit"></i> 切换编辑模式
+            </button>
+            <button class="admin-btn" id="addCharacter">
+                <i class="fas fa-user-plus"></i> 添加角色
+            </button>
+            <button class="admin-btn" id="addMission">
+                <i class="fas fa-tasks"></i> 添加任务
+            </button>
+            <button class="admin-btn save" id="saveData">
+                <i class="fas fa-save"></i> 保存数据
+            </button>
+            <button class="admin-btn" id="exportData">
+                <i class="fas fa-download"></i> 导出数据
+            </button>
+            <button class="admin-btn" id="importData">
+                <i class="fas fa-upload"></i> 导入数据
+            </button>
+            <button class="admin-btn cancel" id="resetData">
+                <i class="fas fa-trash-alt"></i> 重置数据
+            </button>
+        </div>
+    </div>
+    
+    <!-- 头部标题 -->
+    <header class="header">
+        <h1 class="main-title">
+            <i class="fas fa-infinity"></i> 主神空间TRPG战役系统
+        </h1>
+        <p class="subtitle">轮回者信息监控面板 · 管理员编辑模式</p>
+        <div class="console" id="console">
+            <div class="console-line">> 系统初始化完成...</div>
+            <div class="console-line">> 管理员模式已激活...</div>
+            <div class="console-line">> 加载本地存储数据...</div>
+            <div class="console-line">> 等待管理员指令...</div>
+        </div>
+    </header>
+    
+    <!-- 主要内容区域 -->
+    <div class="container">
+        <!-- 左侧角色卡区域 -->
+        <section class="characters-section">
+            <div class="panel" id="charactersPanel">
+                <div class="panel-header">
+                    <h2 class="panel-title"><i class="fas fa-users"></i> 轮回者小队</h2>
+                    <span class="status-alive" id="characterCount">4 名活跃</span>
+                </div>
+                
+                <div class="character-cards" id="characterCardsContainer">
+                    <!-- 角色卡将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 队伍资源 -->
+            <div class="panel" id="resourcesPanel">
+                <div class="panel-header">
+                    <h2 class="panel-title"><i class="fas fa-coins"></i> 队伍资源</h2>
+                </div>
+                <div class="resource-grid" id="resourcesGrid">
+                    <!-- 资源项将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- 右侧战役进度区域 -->
+        <section class="campaign-section">
+            <div class="panel" id="campaignPanel">
+                <div class="panel-header">
+                    <h2 class="panel-title"><i class="fas fa-tasks"></i> 战役进度时间线</h2>
+                    <span class="mission-status status-ongoing" id="campaignStatus">进行中</span>
+                </div>
+                
+                <div class="timeline" id="timelineContainer">
+                    <!-- 任务时间线将通过JavaScript动态生成 -->
+                </div>
+                
+                <!-- 主神公告 -->
+                <div class="announcement" id="announcementPanel">
+                    <div class="announcement-header">
+                        <i class="fas fa-exclamation-triangle"></i> 主神公告
+                    </div>
+                    <p id="announcementText">当前世界剩余时间: <strong>14天</strong>。主线任务失败惩罚: 全员抹杀。支线任务"净化该隐赫斯特"已解锁，完成可获得额外奖励。</p>
+                </div>
+            </div>
+            
+            <!-- 角色详细信息面板 -->
+            <div class="panel" id="characterDetailPanel">
+                <div class="panel-header">
+                    <h2 class="panel-title"><i class="fas fa-id-card"></i> 角色详细信息</h2>
+                </div>
+                <div id="characterDetailContent">
+                    <p>请点击左侧角色卡查看详细信息，或进入编辑模式修改角色数据。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- 编辑表单面板 (隐藏) -->
+    <div class="edit-panel" id="editPanel" style="display: none;">
+        <div class="edit-form" id="editForm">
+            <!-- 编辑表单内容将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 文件导入输入 (隐藏) -->
+    <input type="file" id="fileImport" accept=".json" style="display: none;">
+    
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>主神空间TRPG战役管理系统 v2.5 | 管理员编辑模式</p>
+        <p>警告: 所有更改将自动保存到本地存储 | 管理员权限: 完全控制</p>
+    </footer>
+
+    <script>
+        // 全局变量
+        let isEditMode = false;
+        let editingItem = null;
+        let editingItemType = null;
+        let editingItemIndex = null;
+        
+        // 默认数据
+        const defaultData = {
+            characters: [
+                {
+                    id: 1,
+                    name: "张明 - '铁壁'",
+                    class: "重装战士",
+                    level: 5,
+                    hp: "58/72",
+                    maxHp: 72,
+                    sanity: "42/60",
+                    maxSanity: 60,
+                    status: "alive",
+                    strength: 18,
+                    dexterity: 12,
+                    constitution: 16,
+                    intelligence: 10,
+                    wisdom: 14,
+                    charisma: 8,
+                    skills: ["重甲专精", "盾牌格挡", "嘲讽", "坚韧意志", "战术指挥", "生存知识"],
+                    equipment: ["精钢全身甲", "塔盾", "+1长剑", "治疗药水×3", "圣水瓶"],
+                    background: "前特种部队成员，在主神空间中找到了新的使命。以保护队友为己任，总是冲锋在前。",
+                    currentCondition: "左臂轻度割伤，不影响战斗",
+                    notes: ""
+                },
+                {
+                    id: 2,
+                    name: "林晓雨 - '影刃'",
+                    class: "暗影刺客",
+                    level: 5,
+                    hp: "45/45",
+                    maxHp: 45,
+                    sanity: "55/60",
+                    maxSanity: 60,
+                    status: "alive",
+                    strength: 12,
+                    dexterity: 18,
+                    constitution: 14,
+                    intelligence: 16,
+                    wisdom: 14,
+                    charisma: 10,
+                    skills: ["潜行大师", "弱点洞察", "双武器战斗", "开锁专家", "陷阱解除", "易容术"],
+                    equipment: ["+1匕首×2", "暗影披风", "开锁工具", "烟雾弹×5", "夜视镜"],
+                    background: "前国际大盗，因意外进入主神空间。擅长无声行动和精确打击，是队伍的眼睛和匕首。",
+                    currentCondition: "状态良好",
+                    notes: ""
+                },
+                {
+                    id: 3,
+                    name: "赵海 - '圣光'",
+                    class: "神圣牧师",
+                    level: 5,
+                    hp: "32/52",
+                    maxHp: 52,
+                    sanity: "48/60",
+                    maxSanity: 60,
+                    status: "injured",
+                    strength: 10,
+                    dexterity: 12,
+                    constitution: 14,
+                    intelligence: 14,
+                    wisdom: 18,
+                    charisma: 16,
+                    skills: ["治疗祷言", "驱散亡灵", "神圣护甲", "知识(宗教)", "劝导", "医疗"],
+                    equipment: ["圣徽", "+1钉头锤", "链甲", "治疗药水×5", "圣水×3", "防护邪恶魔杖"],
+                    background: "前神学院学生，信仰坚定。在主神空间中，他的信仰成为了对抗黑暗的力量源泉。",
+                    currentCondition: "肋骨骨折，中等程度伤势，需要休养",
+                    notes: "需要尽快治疗"
+                },
+                {
+                    id: 4,
+                    name: "王雪 - '奥术'",
+                    class: "元素法师",
+                    level: 5,
+                    hp: "38/38",
+                    maxHp: 38,
+                    sanity: "35/60",
+                    maxSanity: 60,
+                    status: "alive",
+                    strength: 8,
+                    dexterity: 14,
+                    constitution: 12,
+                    intelligence: 18,
+                    wisdom: 16,
+                    charisma: 14,
+                    skills: ["火球术", "寒冰护甲", "奥术智慧", "魔法鉴定", "法术穿透", "召唤元素"],
+                    equipment: ["+1法杖", "法师袍", "法术材料包", "魔力宝石×3", "防护戒指", "辨识卷轴×5"],
+                    background: "理论物理学家，对多维空间和神秘学有深入研究。在主神空间中，她的知识转化为了强大的魔法力量。",
+                    currentCondition: "理智值偏低，出现轻微幻觉，需要休息",
+                    notes: "注意理智值恢复"
+                }
+            ],
+            missions: [
+                {
+                    id: 1,
+                    name: "初始试炼: 寂静岭",
+                    status: "completed",
+                    description: "小队首次进入恐怖世界，在迷雾笼罩的小镇中对抗扭曲生物并探索真相。成功解救关键NPC并获取重要线索。",
+                    reward: "1500点数, D级支线剧情×1",
+                    order: 1
+                },
+                {
+                    id: 2,
+                    name: "血月诅咒: 亚楠之夜",
+                    status: "completed",
+                    description: "进入哥特式恐怖城市亚楠，在猎杀之夜生存并寻找治愈血疗的方法。击败 cleric beast 和神父 Gascoigne。",
+                    reward: "3000点数, C级支线剧情×1, 猎人徽章",
+                    order: 2
+                },
+                {
+                    id: 3,
+                    name: "古神低语: 曼西斯梦魇",
+                    status: "ongoing",
+                    description: "探索曼西斯学派隐藏的噩梦，对抗使用禁忌召唤术的学者与降临的古神眷属。当前进度: 已击败噩梦之主米克拉什。",
+                    reward: "5000点数, B级支线剧情×1, 第三脐带",
+                    order: 3
+                },
+                {
+                    id: 4,
+                    name: "深渊回响: 渔村诅咒",
+                    status: "upcoming",
+                    description: "前往被遗忘的渔村，调查科斯的孤儿与海洋古神的秘密。预计难度: 极高。推荐等级: 6+。",
+                    reward: "8000点数, A级支线剧情×1, 古神之血",
+                    order: 4
+                },
+                {
+                    id: 5,
+                    name: "最终试炼: 月之梦境",
+                    status: "upcoming",
+                    description: "击败月之精灵，终结猎杀之夜循环，或是选择成为新的古神。任务条件: 完成所有前置任务，收集至少3条第三脐带。",
+                    reward: "15000点数, S级支线剧情×1, 主神特权",
+                    order: 5
+                }
+            ],
+            resources: [
+                { name: "奖励点数", value: "8,500", id: "points" },
+                { name: "支线剧情", value: "B级×2, C级×3", id: "sideQuests" },
+                { name: "复活次数", value: "1/2", id: "revives" },
+                { name: "补给剩余", value: "12 天", id: "supplies" }
+            ],
+            announcement: "当前世界剩余时间: <strong>14天</strong>。主线任务失败惩罚: 全员抹杀。支线任务'净化该隐赫斯特'已解锁，完成可获得额外奖励。",
+            settings: {
+                adminMode: false,
+                lastSaved: new Date().toISOString()
+            }
+        };
+        
+        // 从本地存储加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('trpgCampaignData');
+            if (savedData) {
+                try {
+                    return JSON.parse(savedData);
+                } catch (e) {
+                    console.error("解析保存数据失败:", e);
+                    return defaultData;
+                }
+            } else {
+                return defaultData;
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            const data = {
+                characters: characters,
+                missions: missions,
+                resources: resources,
+                announcement: announcement,
+                settings: {
+                    adminMode: isEditMode,
+                    lastSaved: new Date().toISOString()
+                }
+            };
+            
+            localStorage.setItem('trpgCampaignData', JSON.stringify(data));
+            addConsoleMessage("> 数据已保存到本地存储");
+            
+            // 显示保存成功提示
+            showNotification("数据保存成功", "success");
+        }
+        
+        // 导出数据
+        function exportData() {
+            const data = {
+                characters: characters,
+                missions: missions,
+                resources: resources,
+                announcement: announcement,
+                settings: {
+                    adminMode: isEditMode,
+                    lastSaved: new Date().toISOString(),
+                    exportDate: new Date().toISOString()
+                }
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `主神空间战役数据_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            addConsoleMessage("> 数据已导出为JSON文件");
+            showNotification("数据导出成功", "success");
+        }
+        
+        // 导入数据
+        function importData() {
+            document.getElementById('fileImport').click();
+        }
+        
+        // 重置数据
+        function resetData() {
+            if (confirm("确定要重置所有数据吗？此操作不可撤销！")) {
+                localStorage.removeItem('trpgCampaignData');
+                Object.assign(characters, [...defaultData.characters]);
+                Object.assign(missions, [...defaultData.missions]);
+                Object.assign(resources, [...defaultData.resources]);
+                announcement = defaultData.announcement;
+                
+                renderAll();
+                addConsoleMessage("> 数据已重置为默认值");
+                showNotification("数据已重置", "warning");
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type = "info") {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 6px;
+                color: white;
+                font-weight: bold;
+                z-index: 3000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            // 根据类型设置样式
+            if (type === "success") {
+                notification.style.backgroundColor = "rgba(0, 255, 136, 0.9)";
+                notification.style.borderLeft = "4px solid #00ff88";
+            } else if (type === "error") {
+                notification.style.backgroundColor = "rgba(255, 55, 95, 0.9)";
+                notification.style.borderLeft = "4px solid #ff375f";
+            } else if (type === "warning") {
+                notification.style.backgroundColor = "rgba(255, 165, 0, 0.9)";
+                notification.style.borderLeft = "4px solid #ffa500";
+            } else {
+                notification.style.backgroundColor = "rgba(0, 212, 255, 0.9)";
+                notification.style.borderLeft = "4px solid #00d4ff";
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // 3秒后移除通知
+            setTimeout(() => {
+                notification.style.animation = "slideOut 0.3s ease";
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+            
+            // 添加CSS动画
+            if (!document.querySelector('#notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // 数据变量
+        let characters = [];
+        let missions = [];
+        let resources = [];
+        let announcement = "";
+        
+        // 创建数据流背景效果
+        function createDataStream() {
+            const streamContainer = document.getElementById('dataStream');
+            const streamCount = 15;
+            
+            for (let i = 0; i < streamCount; i++) {
+                const stream = document.createElement('div');
+                stream.className = 'stream-line';
+                
+                // 随机位置和动画速度
+                const left = Math.random() * 100;
+                const duration = 3 + Math.random() * 4;
+                const delay = Math.random() * 5;
+                
+                stream.style.left = `${left}%`;
+                stream.style.animationDuration = `${duration}s`;
+                stream.style.animationDelay = `${delay}s`;
+                
+                // 随机高度
+                const height = 50 + Math.random() * 150;
+                stream.style.height = `${height}px`;
+                
+                streamContainer.appendChild(stream);
+            }
+        }
+        
+        // 渲染角色卡
+        function renderCharacterCards() {
+            const container = document.getElementById('characterCardsContainer');
+            container.innerHTML = '';
+            
+            characters.forEach((character, index) => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                card.dataset.index = index;
+                
+                if (index === 0) {
+                    card.classList.add('active');
+                }
+                
+                if (editingItemType === 'character' && editingItemIndex === index) {
+                    card.classList.add('editing');
+                }
+                
+                card.innerHTML = `
+                    <button class="edit-btn" data-type="character" data-index="${index}">
+                        <i class="fas fa-edit"></i> 编辑
+                    </button>
+                    <div class="character-header">
+                        <div class="character-name">${character.name}</div>
+                        <span class="character-status status-${character.status}">
+                            ${character.status === 'alive' ? '存活' : character.status === 'injured' ? '受伤' : '死亡'}
+                        </span>
+                    </div>
+                    <div class="character-info">
+                        <div class="character-stats">
+                            <div class="stat-item">
+                                <span>职业:</span>
+                                <span class="stat-value">${character.class}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>等级:</span>
+                                <span class="stat-value">${character.level}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>生命值:</span>
+                                <span class="stat-value">${character.hp}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>理智值:</span>
+                                <span class="stat-value">${character.sanity}</span>
+                            </div>
+                        </div>
+                        <div class="character-skills">
+                            ${character.skills.slice(0, 4).map(skill => 
+                                `<span class="skill-tag">${skill}</span>`
+                            ).join('')}
+                            ${character.skills.length > 4 ? '<span class="skill-tag">...</span>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.edit-btn')) {
+                        selectCharacter(index);
+                    }
+                });
+                
+                container.appendChild(card);
+            });
+            
+            // 更新角色计数
+            const aliveCount = characters.filter(c => c.status === 'alive').length;
+            document.getElementById('characterCount').textContent = `${aliveCount} 名活跃`;
+        }
+        
+        // 渲染战役时间线
+        function renderCampaignTimeline() {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            
+            // 按顺序排序任务
+            const sortedMissions = [...missions].sort((a, b) => a.order - b.order);
+            
+            sortedMissions.forEach((mission, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                
+                if (editingItemType === 'mission' && editingItemIndex === index) {
+                    item.classList.add('editing');
+                }
+                
+                // 状态文本
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(mission.status) {
+                    case 'completed':
+                        statusText = '已完成';
+                        statusClass = 'status-completed';
+                        break;
+                    case 'ongoing':
+                        statusText = '进行中';
+                        statusClass = 'status-ongoing';
+                        break;
+                    case 'upcoming':
+                        statusText = '即将开始';
+                        statusClass = 'status-upcoming';
+                        break;
+                }
+                
+                item.innerHTML = `
+                    <button class="edit-btn" data-type="mission" data-index="${index}">
+                        <i class="fas fa-edit"></i> 编辑
+                    </button>
+                    <div class="timeline-header">
+                        <div class="mission-name">${mission.name}</div>
+                        <span class="mission-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <p class="mission-desc">${mission.description}</p>
+                    <div class="mission-reward">
+                        <i class="fas fa-award"></i> 奖励: ${mission.reward}
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            // 更新战役状态
+            const ongoingMission = missions.find(m => m.status === 'ongoing');
+            document.getElementById('campaignStatus').textContent = ongoingMission ? '进行中' : '已完成';
+        }
+        
+        // 渲染资源
+        function renderResources() {
+            const container = document.getElementById('resourcesGrid');
+            container.innerHTML = '';
+            
+            resources.forEach((resource, index) => {
+                const item = document.createElement('div');
+                item.className = 'resource-item';
+                
+                if (editingItemType === 'resource' && editingItemIndex === index) {
+                    item.classList.add('editing');
+                }
+                
+                item.innerHTML = `
+                    <button class="edit-btn" data-type="resource" data-index="${index}">
+                        <i class="fas fa-edit"></i> 编辑
+                    </button>
+                    <div class="resource-name">${resource.name}</div>
+                    <div class="resource-value">${resource.value}</div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+        
+        // 渲染公告
+        function renderAnnouncement() {
+            document.getElementById('announcementText').innerHTML = announcement;
+            
+            // 添加编辑按钮
+            const announcementPanel = document.getElementById('announcementPanel');
+            if (!announcementPanel.querySelector('.edit-btn')) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.setAttribute('data-type', 'announcement');
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> 编辑';
+                editBtn.style.top = '1rem';
+                announcementPanel.appendChild(editBtn);
+                
+                if (editingItemType === 'announcement') {
+                    announcementPanel.classList.add('editing');
+                }
+            }
+        }
+        
+        // 渲染所有内容
+        function renderAll() {
+            renderCharacterCards();
+            renderCampaignTimeline();
+            renderResources();
+            renderAnnouncement();
+            
+            // 默认选择第一个角色
+            if (characters.length > 0) {
+                selectCharacter(0);
+            }
+        }
+        
+        // 选择角色并显示详细信息
+        function selectCharacter(index) {
+            if (index < 0 || index >= characters.length) return;
+            
+            const character = characters[index];
+            
+            // 更新角色卡活跃状态
+            document.querySelectorAll('.character-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`.character-card[data-index="${index}"]`).classList.add('active');
+            
+            // 构建详细信息HTML
+            let detailHTML = `
+                <h3 style="color: var(--accent-color); margin-bottom: 1rem;">${character.name}</h3>
+                <div class="character-stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+                    <div class="stat-item">
+                        <span>职业:</span>
+                        <span class="stat-value">${character.class}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>等级:</span>
+                        <span class="stat-value">${character.level}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>状态:</span>
+                        <span class="stat-value status-${character.status}" style="display: inline-block; padding: 0.2rem 0.5rem;">
+                            ${character.status === 'alive' ? '存活' : character.status === 'injured' ? '受伤' : '死亡'}
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span>生命值:</span>
+                        <span class="stat-value">${character.hp}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>理智值:</span>
+                        <span class="stat-value">${character.sanity}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>当前状态:</span>
+                        <span class="stat-value">${character.currentCondition}</span>
+                    </div>
+                </div>
+                
+                <h4 style="color: var(--accent-color); margin-bottom: 0.5rem;">属性值</h4>
+                <div class="character-stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+                    <div class="stat-item">
+                        <span>力量:</span>
+                        <span class="stat-value">${character.strength} (+${Math.floor((character.strength-10)/2)})</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>敏捷:</span>
+                        <span class="stat-value">${character.dexterity} (+${Math.floor((character.dexterity-10)/2)})</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>体质:</span>
+                        <span class="stat-value">${character.constitution} (+${Math.floor((character.constitution-10)/2)})</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>智力:</span>
+                        <span class="stat-value">${character.intelligence} (+${Math.floor((character.intelligence-10)/2)})</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>感知:</span>
+                        <span class="stat-value">${character.wisdom} (+${Math.floor((character.wisdom-10)/2)})</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>魅力:</span>
+                        <span class="stat-value">${character.charisma} (+${Math.floor((character.charisma-10)/2)})</span>
+                    </div>
+                </div>
+                
+                <h4 style="color: var(--accent-color); margin-bottom: 0.5rem;">技能与专长</h4>
+                <div style="margin-bottom: 1.5rem;">
+            `;
+            
+            // 添加技能标签
+            character.skills.forEach(skill => {
+                detailHTML += `<span class="skill-tag">${skill}</span> `;
+            });
+            
+            detailHTML += `
+                </div>
+                
+                <h4 style="color: var(--accent-color); margin-bottom: 0.5rem;">装备与物品</h4>
+                <div style="margin-bottom: 1.5rem;">
+            `;
+            
+            // 添加装备标签
+            character.equipment.forEach(item => {
+                detailHTML += `<span class="skill-tag" style="background-color: rgba(100, 80, 0, 0.2); border-color: #cc9900;">${item}</span> `;
+            });
+            
+            detailHTML += `
+                </div>
+                
+                <h4 style="color: var(--accent-color); margin-bottom: 0.5rem;">背景故事</h4>
+                <p style="line-height: 1.6; color: #b0c0ff;">${character.background}</p>
+                
+                <h4 style="color: var(--accent-color); margin-bottom: 0.5rem; margin-top: 1rem;">当前状态备注</h4>
+                <p style="line-height: 1.6; color: #b0c0ff;">${character.currentCondition}</p>
+            `;
+            
+            if (character.notes) {
+                detailHTML += `
+                    <h4 style="color: var(--accent-color); margin-bottom: 0.5rem; margin-top: 1rem;">管理员备注</h4>
+                    <p style="line-height: 1.6; color: #ffa500;">${character.notes}</p>
+                `;
+            }
+            
+            // 更新详细信息面板
+            document.getElementById('characterDetailContent').innerHTML = detailHTML;
+            
+            // 添加控制台消息
+            addConsoleMessage(`> 正在访问轮回者档案: ${character.name}`);
+        }
+        
+        // 切换编辑模式
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            // 更新按钮文本
+            const toggleBtn = document.getElementById('toggleEditMode');
+            if (isEditMode) {
+                toggleBtn.innerHTML = '<i class="fas fa-times"></i> 退出编辑模式';
+                toggleBtn.classList.add('edit');
+                addConsoleMessage("> 编辑模式已激活");
+                showNotification("编辑模式已激活", "success");
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i> 切换编辑模式';
+                toggleBtn.classList.remove('edit');
+                addConsoleMessage("> 编辑模式已关闭");
+                showNotification("编辑模式已关闭", "info");
+                
+                // 如果正在编辑，取消编辑
+                if (editingItem) {
+                    cancelEdit();
+                }
+            }
+            
+            // 显示/隐藏编辑按钮
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.style.display = isEditMode ? 'block' : 'none';
+            });
+            
+            // 更新面板样式
+            document.querySelectorAll('.panel').forEach(panel => {
+                if (isEditMode) {
+                    panel.classList.add('editing');
+                } else {
+                    panel.classList.remove('editing');
+                }
+            });
+        }
+        
+        // 打开编辑表单
+        function openEditForm(type, index = null) {
+            editingItemType = type;
+            editingItemIndex = index;
+            
+            let formTitle = '';
+            let formHTML = '';
+            
+            if (type === 'character') {
+                const character = index !== null ? characters[index] : {
+                    id: Date.now(),
+                    name: "新角色",
+                    class: "战士",
+                    level: 1,
+                    hp: "10/10",
+                    maxHp: 10,
+                    sanity: "10/10",
+                    maxSanity: 10,
+                    status: "alive",
+                    strength: 10,
+                    dexterity: 10,
+                    constitution: 10,
+                    intelligence: 10,
+                    wisdom: 10,
+                    charisma: 10,
+                    skills: [],
+                    equipment: [],
+                    background: "",
+                    currentCondition: "状态良好",
+                    notes: ""
+                };
+                
+                editingItem = character;
+                formTitle = index !== null ? '编辑角色' : '添加新角色';
+                
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">角色名称</label>
+                        <input type="text" class="edit-input" id="editName" value="${character.name}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">职业</label>
+                        <input type="text" class="edit-input" id="editClass" value="${character.class}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">等级</label>
+                        <input type="number" class="edit-input edit-small" id="editLevel" value="${character.level}" min="1" max="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">状态</label>
+                        <select class="edit-select" id="editStatus">
+                            <option value="alive" ${character.status === 'alive' ? 'selected' : ''}>存活</option>
+                            <option value="injured" ${character.status === 'injured' ? 'selected' : ''}>受伤</option>
+                            <option value="dead" ${character.status === 'dead' ? 'selected' : ''}>死亡</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">生命值 (当前/最大)</label>
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="number" class="edit-input" style="flex: 1;" id="editHpCurrent" value="${character.hp.split('/')[0]}" min="0">
+                            <span style="align-self: center;">/</span>
+                            <input type="number" class="edit-input" style="flex: 1;" id="editHpMax" value="${character.hp.split('/')[1] || character.maxHp}" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">理智值 (当前/最大)</label>
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="number" class="edit-input" style="flex: 1;" id="editSanityCurrent" value="${character.sanity.split('/')[0]}" min="0">
+                            <span style="align-self: center;">/</span>
+                            <input type="number" class="edit-input" style="flex: 1;" id="editSanityMax" value="${character.sanity.split('/')[1] || character.maxSanity}" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">属性值</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="font-size: 0.8rem;">力量</label>
+                                <input type="number" class="edit-input" id="editStrength" value="${character.strength}" min="1" max="30">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem;">敏捷</label>
+                                <input type="number" class="edit-input" id="editDexterity" value="${character.dexterity}" min="1" max="30">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem;">体质</label>
+                                <input type="number" class="edit-input" id="editConstitution" value="${character.constitution}" min="1" max="30">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem;">智力</label>
+                                <input type="number" class="edit-input" id="editIntelligence" value="${character.intelligence}" min="1" max="30">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem;">感知</label>
+                                <input type="number" class="edit-input" id="editWisdom" value="${character.wisdom}" min="1" max="30">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem;">魅力</label>
+                                <input type="number" class="edit-input" id="editCharisma" value="${character.charisma}" min="1" max="30">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">技能</label>
+                        <div class="edit-tag-input">
+                            <input type="text" class="edit-input" id="newSkill" placeholder="输入新技能">
+                            <button type="button" class="admin-btn" id="addSkillBtn">添加</button>
+                        </div>
+                        <div class="edit-tags" id="skillTags">
+                            ${character.skills.map(skill => `
+                                <div class="edit-tag">
+                                    ${skill}
+                                    <span class="edit-tag-remove" data-skill="${skill}">×</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">装备</label>
+                        <div class="edit-tag-input">
+                            <input type="text" class="edit-input" id="newEquipment" placeholder="输入新装备">
+                            <button type="button" class="admin-btn" id="addEquipmentBtn">添加</button>
+                        </div>
+                        <div class="edit-tags" id="equipmentTags">
+                            ${character.equipment.map(item => `
+                                <div class="edit-tag">
+                                    ${item}
+                                    <span class="edit-tag-remove" data-item="${item}">×</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">背景故事</label>
+                        <textarea class="edit-textarea" id="editBackground">${character.background}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">当前状态</label>
+                        <textarea class="edit-textarea" id="editCondition">${character.currentCondition}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">管理员备注</label>
+                        <textarea class="edit-textarea" id="editNotes">${character.notes}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="admin-btn save" id="saveEditBtn" style="flex: 1;">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                        <button class="admin-btn cancel" id="cancelEditBtn" style="flex: 1;">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        ${index !== null ? `
+                            <button class="admin-btn cancel" id="deleteCharacterBtn" style="flex: 1; background-color: rgba(255, 55, 95, 0.2);">
+                                <i class="fas fa-trash-alt"></i> 删除角色
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (type === 'mission') {
+                const mission = index !== null ? missions[index] : {
+                    id: Date.now(),
+                    name: "新任务",
+                    status: "upcoming",
+                    description: "任务描述",
+                    reward: "奖励内容",
+                    order: missions.length + 1
+                };
+                
+                editingItem = mission;
+                formTitle = index !== null ? '编辑任务' : '添加新任务';
+                
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">任务名称</label>
+                        <input type="text" class="edit-input" id="editMissionName" value="${mission.name}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">任务状态</label>
+                        <select class="edit-select" id="editMissionStatus">
+                            <option value="completed" ${mission.status === 'completed' ? 'selected' : ''}>已完成</option>
+                            <option value="ongoing" ${mission.status === 'ongoing' ? 'selected' : ''}>进行中</option>
+                            <option value="upcoming" ${mission.status === 'upcoming' ? 'selected' : ''}>即将开始</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">任务顺序</label>
+                        <input type="number" class="edit-input edit-small" id="editMissionOrder" value="${mission.order}" min="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">任务描述</label>
+                        <textarea class="edit-textarea" id="editMissionDesc">${mission.description}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">任务奖励</label>
+                        <textarea class="edit-textarea" id="editMissionReward">${mission.reward}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="admin-btn save" id="saveEditBtn" style="flex: 1;">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                        <button class="admin-btn cancel" id="cancelEditBtn" style="flex: 1;">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        ${index !== null ? `
+                            <button class="admin-btn cancel" id="deleteMissionBtn" style="flex: 1; background-color: rgba(255, 55, 95, 0.2);">
+                                <i class="fas fa-trash-alt"></i> 删除任务
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (type === 'resource') {
+                const resource = index !== null ? resources[index] : {
+                    name: "新资源",
+                    value: "0",
+                    id: "new_" + Date.now()
+                };
+                
+                editingItem = resource;
+                formTitle = index !== null ? '编辑资源' : '添加新资源';
+                
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">资源名称</label>
+                        <input type="text" class="edit-input" id="editResourceName" value="${resource.name}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">资源数值</label>
+                        <input type="text" class="edit-input" id="editResourceValue" value="${resource.value}">
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="admin-btn save" id="saveEditBtn" style="flex: 1;">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                        <button class="admin-btn cancel" id="cancelEditBtn" style="flex: 1;">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        ${index !== null ? `
+                            <button class="admin-btn cancel" id="deleteResourceBtn" style="flex: 1; background-color: rgba(255, 55, 95, 0.2);">
+                                <i class="fas fa-trash-alt"></i> 删除资源
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (type === 'announcement') {
+                editingItem = announcement;
+                formTitle = '编辑主神公告';
+                
+                formHTML = `
+                    <div class="form-group">
+                        <label class="form-label">公告内容 (支持HTML)</label>
+                        <textarea class="edit-textarea" id="editAnnouncement" rows="6">${announcement}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="admin-btn save" id="saveEditBtn" style="flex: 1;">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                        <button class="admin-btn cancel" id="cancelEditBtn" style="flex: 1;">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // 设置表单内容
+            document.getElementById('editForm').innerHTML = `
+                <div class="edit-form-header">
+                    <div class="edit-form-title">${formTitle}</div>
+                    <button class="admin-btn cancel" id="closeEditForm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                ${formHTML}
+            `;
+            
+            // 显示编辑面板
+            document.getElementById('editPanel').style.display = 'flex';
+            
+            // 添加事件监听器
+            document.getElementById('closeEditForm').addEventListener('click', cancelEdit);
+            document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+            document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+            
+            // 为角色编辑添加特殊事件
+            if (type === 'character') {
+                // 添加技能
+                document.getElementById('addSkillBtn').addEventListener('click', () => {
+                    const newSkill = document.getElementById('newSkill').value.trim();
+                    if (newSkill) {
+                        const skillTags = document.getElementById('skillTags');
+                        const tag = document.createElement('div');
+                        tag.className = 'edit-tag';
+                        tag.innerHTML = `
+                            ${newSkill}
+                            <span class="edit-tag-remove" data-skill="${newSkill}">×</span>
+                        `;
+                        skillTags.appendChild(tag);
+                        document.getElementById('newSkill').value = '';
+                        
+                        // 添加删除事件
+                        tag.querySelector('.edit-tag-remove').addEventListener('click', function() {
+                            this.parentElement.remove();
+                        });
+                    }
+                });
+                
+                // 添加装备
+                document.getElementById('addEquipmentBtn').addEventListener('click', () => {
+                    const newEquipment = document.getElementById('newEquipment').value.trim();
+                    if (newEquipment) {
+                        const equipmentTags = document.getElementById('equipmentTags');
+                        const tag = document.createElement('div');
+                        tag.className = 'edit-tag';
+                        tag.innerHTML = `
+                            ${newEquipment}
+                            <span class="edit-tag-remove" data-item="${newEquipment}">×</span>
+                        `;
+                        equipmentTags.appendChild(tag);
+                        document.getElementById('newEquipment').value = '';
+                        
+                        // 添加删除事件
+                        tag.querySelector('.edit-tag-remove').addEventListener('click', function() {
+                            this.parentElement.remove();
+                        });
+                    }
+                });
+                
+                // 添加现有标签的删除事件
+                document.querySelectorAll('.edit-tag-remove').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        this.parentElement.remove();
+                    });
+                });
+                
+                // 删除角色按钮
+                if (document.getElementById('deleteCharacterBtn')) {
+                    document.getElementById('deleteCharacterBtn').addEventListener('click', () => {
+                        if (confirm(`确定要删除角色 "${characters[editingItemIndex].name}" 吗？`)) {
+                            characters.splice(editingItemIndex, 1);
+                            cancelEdit();
+                            renderAll();
+                            saveData();
+                            addConsoleMessage(`> 已删除角色`);
+                            showNotification("角色已删除", "warning");
+                        }
+                    });
+                }
+            }
+            
+            // 删除任务按钮
+            if (type === 'mission' && document.getElementById('deleteMissionBtn')) {
+                document.getElementById('deleteMissionBtn').addEventListener('click', () => {
+                    if (confirm(`确定要删除任务 "${missions[editingItemIndex].name}" 吗？`)) {
+                        missions.splice(editingItemIndex, 1);
+                        cancelEdit();
+                        renderAll();
+                        saveData();
+                        addConsoleMessage(`> 已删除任务`);
+                        showNotification("任务已删除", "warning");
+                    }
+                });
+            }
+            
+            // 删除资源按钮
+            if (type === 'resource' && document.getElementById('deleteResourceBtn')) {
+                document.getElementById('deleteResourceBtn').addEventListener('click', () => {
+                    if (confirm(`确定要删除资源 "${resources[editingItemIndex].name}" 吗？`)) {
+                        resources.splice(editingItemIndex, 1);
+                        cancelEdit();
+                        renderAll();
+                        saveData();
+                        addConsoleMessage(`> 已删除资源`);
+                        showNotification("资源已删除", "warning");
+                    }
+                });
+            }
+        }
+        
+        // 保存编辑
+        function saveEdit() {
+            if (editingItemType === 'character') {
+                // 收集技能
+                const skills = [];
+                document.querySelectorAll('#skillTags .edit-tag').forEach(tag => {
+                    skills.push(tag.textContent.replace('×', '').trim());
+                });
+                
+                // 收集装备
+                const equipment = [];
+                document.querySelectorAll('#equipmentTags .edit-tag').forEach(tag => {
+                    equipment.push(tag.textContent.replace('×', '').trim());
+                });
+                
+                const hpCurrent = document.getElementById('editHpCurrent').value;
+                const hpMax = document.getElementById('editHpMax').value;
+                const sanityCurrent = document.getElementById('editSanityCurrent').value;
+                const sanityMax = document.getElementById('editSanityMax').value;
+                
+                const characterData = {
+                    id: editingItem.id || Date.now(),
+                    name: document.getElementById('editName').value,
+                    class: document.getElementById('editClass').value,
+                    level: parseInt(document.getElementById('editLevel').value),
+                    hp: `${hpCurrent}/${hpMax}`,
+                    maxHp: parseInt(hpMax),
+                    sanity: `${sanityCurrent}/${sanityMax}`,
+                    maxSanity: parseInt(sanityMax),
+                    status: document.getElementById('editStatus').value,
+                    strength: parseInt(document.getElementById('editStrength').value),
+                    dexterity: parseInt(document.getElementById('editDexterity').value),
+                    constitution: parseInt(document.getElementById('editConstitution').value),
+                    intelligence: parseInt(document.getElementById('editIntelligence').value),
+                    wisdom: parseInt(document.getElementById('editWisdom').value),
+                    charisma: parseInt(document.getElementById('editCharisma').value),
+                    skills: skills,
+                    equipment: equipment,
+                    background: document.getElementById('editBackground').value,
+                    currentCondition: document.getElementById('editCondition').value,
+                    notes: document.getElementById('editNotes').value
+                };
+                
+                if (editingItemIndex !== null) {
+                    // 更新现有角色
+                    characters[editingItemIndex] = characterData;
+                    addConsoleMessage(`> 已更新角色: ${characterData.name}`);
+                    showNotification("角色已更新", "success");
+                } else {
+                    // 添加新角色
+                    characters.push(characterData);
+                    addConsoleMessage(`> 已添加新角色: ${characterData.name}`);
+                    showNotification("新角色已添加", "success");
+                }
+            } else if (editingItemType === 'mission') {
+                const missionData = {
+                    id: editingItem.id || Date.now(),
+                    name: document.getElementById('editMissionName').value,
+                    status: document.getElementById('editMissionStatus').value,
+                    description: document.getElementById('editMissionDesc').value,
+                    reward: document.getElementById('editMissionReward').value,
+                    order: parseInt(document.getElementById('editMissionOrder').value)
+                };
+                
+                if (editingItemIndex !== null) {
+                    // 更新现有任务
+                    missions[editingItemIndex] = missionData;
+                    addConsoleMessage(`> 已更新任务: ${missionData.name}`);
+                    showNotification("任务已更新", "success");
+                } else {
+                    // 添加新任务
+                    missions.push(missionData);
+                    addConsoleMessage(`> 已添加新任务: ${missionData.name}`);
+                    showNotification("新任务已添加", "success");
+                }
+            } else if (editingItemType === 'resource') {
+                const resourceData = {
+                    name: document.getElementById('editResourceName').value,
+                    value: document.getElementById('editResourceValue').value,
+                    id: editingItem.id || "new_" + Date.now()
+                };
+                
+                if (editingItemIndex !== null) {
+                    // 更新现有资源
+                    resources[editingItemIndex] = resourceData;
+                    addConsoleMessage(`> 已更新资源: ${resourceData.name}`);
+                    showNotification("资源已更新", "success");
+                } else {
+                    // 添加新资源
+                    resources.push(resourceData);
+                    addConsoleMessage(`> 已添加新资源: ${resourceData.name}`);
+                    showNotification("新资源已添加", "success");
+                }
+            } else if (editingItemType === 'announcement') {
+                announcement = document.getElementById('editAnnouncement').value;
+                addConsoleMessage(`> 已更新主神公告`);
+                showNotification("公告已更新", "success");
+            }
+            
+            // 重新渲染并保存数据
+            renderAll();
+            saveData();
+            
+            // 关闭编辑面板
+            cancelEdit();
+        }
+        
+        // 取消编辑
+        function cancelEdit() {
+            document.getElementById('editPanel').style.display = 'none';
+            editingItem = null;
+            editingItemType = null;
+            editingItemIndex = null;
+            
+            // 移除编辑样式
+            document.querySelectorAll('.editing').forEach(el => {
+                el.classList.remove('editing');
+            });
+        }
+        
+        // 添加控制台消息
+        function addConsoleMessage(message) {
+            const consoleElement = document.getElementById('console');
+            const newLine = document.createElement('div');
+            newLine.className = 'console-line';
+            newLine.textContent = message;
+            consoleElement.appendChild(newLine);
+            
+            // 滚动到底部
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载数据
+            const loadedData = loadData();
+            characters = loadedData.characters || defaultData.characters;
+            missions = loadedData.missions || defaultData.missions;
+            resources = loadedData.resources || defaultData.resources;
+            announcement = loadedData.announcement || defaultData.announcement;
+            isEditMode = loadedData.settings?.adminMode || false;
+            
+            createDataStream();
+            renderAll();
+            
+            // 如果之前是编辑模式，恢复编辑模式
+            if (isEditMode) {
+                toggleEditMode();
+            }
+            
+            // 绑定按钮事件
+            document.getElementById('toggleEditMode').addEventListener('click', toggleEditMode);
+            document.getElementById('addCharacter').addEventListener('click', () => {
+                if (isEditMode) {
+                    openEditForm('character');
+                } else {
+                    showNotification("请先进入编辑模式", "warning");
+                }
+            });
+            document.getElementById('addMission').addEventListener('click', () => {
+                if (isEditMode) {
+                    openEditForm('mission');
+                } else {
+                    showNotification("请先进入编辑模式", "warning");
+                }
+            });
+            document.getElementById('saveData').addEventListener('click', saveData);
+            document.getElementById('exportData').addEventListener('click', exportData);
+            document.getElementById('importData').addEventListener('click', importData);
+            document.getElementById('resetData').addEventListener('click', resetData);
+            
+            // 文件导入处理
+            document.getElementById('fileImport').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        
+                        if (confirm("确定要导入数据吗？这将覆盖当前所有数据！")) {
+                            characters = importedData.characters || defaultData.characters;
+                            missions = importedData.missions || defaultData.missions;
+                            resources = importedData.resources || defaultData.resources;
+                            announcement = importedData.announcement || defaultData.announcement;
+                            
+                            renderAll();
+                            saveData();
+                            addConsoleMessage("> 数据导入成功");
+                            showNotification("数据导入成功", "success");
+                        }
+                    } catch (error) {
+                        console.error("导入数据失败:", error);
+                        showNotification("导入失败: 文件格式不正确", "error");
+                    }
+                    
+                    // 重置文件输入
+                    e.target.value = '';
+                };
+                reader.readAsText(file);
+            });
+            
+            // 委托编辑按钮点击事件
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.edit-btn')) {
+                    const btn = e.target.closest('.edit-btn');
+                    if (!isEditMode) {
+                        showNotification("请先进入编辑模式", "warning");
+                        return;
+                    }
+                    
+                    const type = btn.getAttribute('data-type');
+                    const index = btn.getAttribute('data-index');
+                    
+                    if (type && index !== null) {
+                        openEditForm(type, parseInt(index));
+                    } else if (type === 'announcement') {
+                        openEditForm('announcement');
+                    }
+                }
+            });
+            
+            // 添加控制台消息
+            addConsoleMessage("> 系统初始化完成");
+            addConsoleMessage(`> 加载了 ${characters.length} 个角色，${missions.length} 个任务`);
+            addConsoleMessage("> 等待管理员指令...");
+            
+            // 模拟实时更新
+            setTimeout(() => {
+                addConsoleMessage("> 系统自检完成，所有功能正常");
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
